@@ -190,7 +190,7 @@ async function ensureFoundryRunning() {
 
   // Check if already running
   try {
-    if (foundryManager.isServiceRunning()) {
+    if (await foundryManager.isServiceRunning()) {
       console.log('[PrivateGPT] Foundry Local is already running')
       mainWindow?.webContents.send('foundry-ready')
       return { status: 'running' }
@@ -219,7 +219,7 @@ async function ensureFoundryRunning() {
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
 
     try {
-      if (foundryManager.isServiceRunning()) {
+      if (await foundryManager.isServiceRunning()) {
         console.log(`[PrivateGPT] Foundry Local started successfully (attempt ${attempt})`)
         mainWindow?.webContents.send('foundry-ready')
         return { status: 'started' }
