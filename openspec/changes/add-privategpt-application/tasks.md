@@ -93,14 +93,14 @@
 
 ## 8. Testing
 
-- [ ] 8.1 Unit tests for SecureSessionManager
-  - [ ] 8.1.1 Test key generation
-  - [ ] 8.1.2 Test encrypt/decrypt round-trip
-  - [ ] 8.1.3 Test buffer overwrite on purge
-- [ ] 8.2 Unit tests for FileProcessor
-  - [ ] 8.2.1 Test text file reading
-  - [ ] 8.2.2 Test image base64 encoding
-  - [ ] 8.2.3 Test size limit enforcement
+- [x] 8.1 Unit tests for SecureSessionManager
+  - [x] 8.1.1 Test key generation
+  - [x] 8.1.2 Test encrypt/decrypt round-trip
+  - [x] 8.1.3 Test buffer overwrite on purge
+- [x] 8.2 Unit tests for FileProcessor
+  - [x] 8.2.1 Test text file reading
+  - [x] 8.2.2 Test image base64 encoding
+  - [x] 8.2.3 Test size limit enforcement
 - [ ] 8.3 Integration tests
   - [ ] 8.3.1 Test full message flow with attachment
   - [ ] 8.3.2 Test startup purge clears residual files
