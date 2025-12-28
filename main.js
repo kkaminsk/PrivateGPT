@@ -165,6 +165,37 @@ ipcMain.handle('retry-foundry-start', async () => {
   return ensureFoundryRunning()
 })
 
+// Check if Foundry is installed (can start service)
+ipcMain.handle('check-foundry-installed', async () => {
+  try {
+    // Try to check if service is running - if it fails, Foundry is not installed
+    await foundryManager.isServiceRunning()
+    return { installed: true }
+  } catch (error) {
+    // Try to start service - if that also fails, definitely not installed
+    try {
+      await foundryManager.startService()
+      return { installed: true }
+    } catch (startError) {
+      return { installed: false, error: startError.message }
+    }
+  }
+})
+
+// Check if any models are cached
+ipcMain.handle('check-models-available', async () => {
+  try {
+    const models = await foundryManager.listCachedModels()
+    return {
+      available: models && models.length > 0,
+      count: models ? models.length : 0,
+      models: models || []
+    }
+  } catch (error) {
+    return { available: false, count: 0, error: error.message }
+  }
+})
+
 /**
  * Check if model likely supports vision based on model ID/name
  * @param {string} modelId
@@ -314,6 +345,7 @@ async function createWindow() {
     height: 768,
     autoHideMenuBar: true,
     title: 'PrivateGPT',
+    icon: path.join(__dirname, 'icon', 'icon256.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

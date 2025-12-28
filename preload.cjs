@@ -42,6 +42,10 @@ try {
         onFoundryFailed: (callback) => ipcRenderer.on('foundry-failed', (_, error) => callback(error)),
         retryFoundryStart: () => ipcRenderer.invoke('retry-foundry-start'),
 
+        // Setup status checks
+        checkFoundryInstalled: () => ipcRenderer.invoke('check-foundry-installed'),
+        checkModelsAvailable: () => ipcRenderer.invoke('check-models-available'),
+
         // Cleanup
         removeAllAttachmentListeners: () => {
             ipcRenderer.removeAllListeners('attachment-warnings');

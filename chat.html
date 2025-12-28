@@ -791,9 +791,428 @@
         .theme-high-contrast .modal-link {
             text-decoration: underline;
         }
+
+        /* Setup Splash Screen */
+        .setup-splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            padding: 40px;
+        }
+
+        .setup-splash.hidden {
+            display: none;
+        }
+
+        .setup-container {
+            background: var(--bg-surface);
+            border: 2px solid var(--border-color-strong);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+
+        .theme-high-contrast .setup-container {
+            border-width: 3px;
+            border-radius: 8px;
+            box-shadow: none;
+        }
+
+        .setup-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .setup-header h1 {
+            color: var(--accent-primary);
+            font-size: 28px;
+            margin: 0 0 8px 0;
+        }
+
+        .setup-header p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 32px;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-circle {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 12px var(--shadow-color);
+        }
+
+        .step.complete .step-circle {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .step-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 80px;
+        }
+
+        .step.active .step-label {
+            color: var(--accent-primary);
+        }
+
+        .step-connector {
+            width: 60px;
+            height: 2px;
+            background: var(--border-color);
+            margin: 0 8px;
+            margin-bottom: 28px;
+        }
+
+        .step-connector.complete {
+            background: var(--accent-primary);
+        }
+
+        .theme-high-contrast .step-circle {
+            border-width: 3px;
+        }
+
+        .theme-high-contrast .step-connector {
+            height: 3px;
+        }
+
+        /* Step Content */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            color: var(--accent-primary);
+            font-size: 18px;
+            margin: 0 0 12px 0;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+
+        /* Command Box */
+        .command-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .command-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .command-text {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            color: var(--accent-primary);
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        .command-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .command-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid var(--border-color-strong);
+            background: transparent;
+            color: var(--accent-primary);
+            transition: all 0.2s ease;
+        }
+
+        .command-btn:hover {
+            background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+        }
+
+        .command-btn.primary {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .command-btn.primary:hover {
+            background: var(--accent-secondary);
+        }
+
+        .command-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .theme-high-contrast .command-box {
+            border-width: 2px;
+        }
+
+        .theme-high-contrast .command-btn {
+            border-width: 2px;
+        }
+
+        .theme-high-contrast .command-btn:focus {
+            outline: 3px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+
+        /* Status Messages */
+        .step-status {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .step-status.success {
+            display: block;
+            background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+            color: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
+        }
+
+        .step-status.error {
+            display: block;
+            background: var(--error-bg);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .step-status.checking {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: color-mix(in srgb, var(--accent-tertiary) 15%, transparent);
+            color: var(--accent-tertiary);
+            border: 1px solid var(--accent-tertiary);
+        }
+
+        .theme-high-contrast .step-status {
+            border-width: 2px;
+        }
+
+        /* Ready Step */
+        .ready-content {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .ready-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            color: var(--accent-primary);
+        }
+
+        .ready-title {
+            color: var(--accent-primary);
+            font-size: 24px;
+            margin: 0 0 12px 0;
+        }
+
+        .ready-description {
+            color: var(--text-secondary);
+            margin: 0 0 24px 0;
+        }
+
+        .start-btn {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            transition: all 0.2s ease;
+        }
+
+        .start-btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-1px);
+        }
+
+        .theme-high-contrast .start-btn {
+            border: 2px solid var(--accent-primary);
+        }
+
+        .theme-high-contrast .start-btn:focus {
+            outline: 3px solid var(--accent-secondary);
+            outline-offset: 2px;
+        }
+
+        /* Mini spinner for checking status */
+        .mini-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-tertiary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Fallback link */
+        .fallback-text {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .fallback-text a {
+            color: var(--accent-tertiary);
+            text-decoration: none;
+        }
+
+        .fallback-text a:hover {
+            text-decoration: underline;
+        }
+
+        .theme-high-contrast .fallback-text a {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <!-- Setup Splash Screen -->
+    <div id="setup-splash" class="setup-splash hidden">
+        <div class="setup-container">
+            <div class="setup-header">
+                <h1>PrivateGPT Setup</h1>
+                <p>Complete these steps to get started</p>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1-indicator">
+                    <div class="step-circle">1</div>
+                    <span class="step-label">Install Foundry</span>
+                </div>
+                <div class="step-connector" id="connector1"></div>
+                <div class="step" id="step2-indicator">
+                    <div class="step-circle">2</div>
+                    <span class="step-label">Download Model</span>
+                </div>
+                <div class="step-connector" id="connector2"></div>
+                <div class="step" id="step3-indicator">
+                    <div class="step-circle">3</div>
+                    <span class="step-label">Ready</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Install Foundry -->
+            <div class="step-content active" id="step1-content">
+                <h3 class="step-title">Step 1: Install Foundry Local</h3>
+                <p class="step-description">
+                    Foundry Local is Microsoft's runtime for running AI models locally on your device.
+                    Run this command in PowerShell or Windows Terminal:
+                </p>
+                <div class="command-box">
+                    <div class="command-label">PowerShell / Terminal</div>
+                    <div class="command-text" id="install-cmd">winget install Microsoft.FoundryLocal</div>
+                    <div class="command-actions">
+                        <button class="command-btn" id="copy-install-cmd">Copy</button>
+                        <button class="command-btn primary" id="check-install-btn">Check Installation</button>
+                    </div>
+                </div>
+                <div class="step-status" id="step1-status"></div>
+                <p class="fallback-text">
+                    Don't have winget? <a href="https://github.com/microsoft/Foundry-Local/releases" target="_blank">Download manually</a>
+                </p>
+            </div>
+
+            <!-- Step 2: Download Model -->
+            <div class="step-content" id="step2-content">
+                <h3 class="step-title">Step 2: Download a Model</h3>
+                <p class="step-description">
+                    Now download an AI model. This command will download and cache the phi-3-mini-4k model
+                    (about 2.4 GB). Run this in PowerShell or Terminal:
+                </p>
+                <div class="command-box">
+                    <div class="command-label">PowerShell / Terminal</div>
+                    <div class="command-text" id="model-cmd">foundry model run phi-3-mini-4k</div>
+                    <div class="command-actions">
+                        <button class="command-btn" id="copy-model-cmd">Copy</button>
+                        <button class="command-btn primary" id="check-models-btn">Check Models</button>
+                    </div>
+                </div>
+                <div class="step-status" id="step2-status"></div>
+                <p class="fallback-text">
+                    Note: The download may take several minutes. Wait for it to complete in the terminal before checking.
+                </p>
+            </div>
+
+            <!-- Step 3: Ready -->
+            <div class="step-content" id="step3-content">
+                <div class="ready-content">
+                    <svg class="ready-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    <h2 class="ready-title">Setup Complete!</h2>
+                    <p class="ready-description">
+                        Foundry Local is installed and you have models ready to use.
+                    </p>
+                    <button class="start-btn" id="start-privategpt-btn">Start PrivateGPT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-spinner"></div>
@@ -1241,6 +1660,29 @@
             const downloadBtn = document.getElementById('download-btn');
             const installCommand = document.getElementById('install-command');
 
+            // Setup splash screen elements
+            const setupSplash = document.getElementById('setup-splash');
+            const step1Indicator = document.getElementById('step1-indicator');
+            const step2Indicator = document.getElementById('step2-indicator');
+            const step3Indicator = document.getElementById('step3-indicator');
+            const connector1 = document.getElementById('connector1');
+            const connector2 = document.getElementById('connector2');
+            const step1Content = document.getElementById('step1-content');
+            const step2Content = document.getElementById('step2-content');
+            const step3Content = document.getElementById('step3-content');
+            const step1Status = document.getElementById('step1-status');
+            const step2Status = document.getElementById('step2-status');
+            const copyInstallCmd = document.getElementById('copy-install-cmd');
+            const copyModelCmd = document.getElementById('copy-model-cmd');
+            const checkInstallBtn = document.getElementById('check-install-btn');
+            const checkModelsBtn = document.getElementById('check-models-btn');
+            const startPrivateGPTBtn = document.getElementById('start-privategpt-btn');
+
+            // Setup state
+            let setupCurrentStep = 1;
+            let foundryInstalled = false;
+            let modelsAvailable = false;
+
             function showLoading(text) {
                 loadingText.textContent = text;
                 loadingOverlay.classList.remove('hidden');
@@ -1258,28 +1700,182 @@
                 foundryModal.classList.add('hidden');
             }
 
+            function showSetupSplash() {
+                setupSplash.classList.remove('hidden');
+            }
+
+            function hideSetupSplash() {
+                setupSplash.classList.add('hidden');
+            }
+
+            function setSetupStep(step) {
+                setupCurrentStep = step;
+
+                // Update indicators
+                step1Indicator.classList.remove('active', 'complete');
+                step2Indicator.classList.remove('active', 'complete');
+                step3Indicator.classList.remove('active', 'complete');
+                connector1.classList.remove('complete');
+                connector2.classList.remove('complete');
+
+                if (step >= 1) {
+                    if (step === 1) {
+                        step1Indicator.classList.add('active');
+                    } else {
+                        step1Indicator.classList.add('complete');
+                        step1Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                    }
+                }
+
+                if (step >= 2) {
+                    connector1.classList.add('complete');
+                    if (step === 2) {
+                        step2Indicator.classList.add('active');
+                    } else {
+                        step2Indicator.classList.add('complete');
+                        step2Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                    }
+                }
+
+                if (step >= 3) {
+                    connector2.classList.add('complete');
+                    step3Indicator.classList.add('active');
+                    step3Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                }
+
+                // Update content visibility
+                step1Content.classList.remove('active');
+                step2Content.classList.remove('active');
+                step3Content.classList.remove('active');
+
+                if (step === 1) step1Content.classList.add('active');
+                else if (step === 2) step2Content.classList.add('active');
+                else if (step === 3) step3Content.classList.add('active');
+            }
+
+            function showStepStatus(stepNum, type, message) {
+                const statusEl = stepNum === 1 ? step1Status : step2Status;
+                statusEl.className = 'step-status ' + type;
+                if (type === 'checking') {
+                    statusEl.innerHTML = '<div class="mini-spinner"></div><span>' + message + '</span>';
+                } else {
+                    statusEl.textContent = message;
+                }
+            }
+
+            function hideStepStatus(stepNum) {
+                const statusEl = stepNum === 1 ? step1Status : step2Status;
+                statusEl.className = 'step-status';
+                statusEl.textContent = '';
+            }
+
+            // Copy commands
+            copyInstallCmd.addEventListener('click', () => {
+                navigator.clipboard.writeText('winget install Microsoft.FoundryLocal');
+                copyInstallCmd.textContent = 'Copied!';
+                setTimeout(() => { copyInstallCmd.textContent = 'Copy'; }, 1500);
+            });
+
+            copyModelCmd.addEventListener('click', () => {
+                navigator.clipboard.writeText('foundry model run phi-3-mini-4k');
+                copyModelCmd.textContent = 'Copied!';
+                setTimeout(() => { copyModelCmd.textContent = 'Copy'; }, 1500);
+            });
+
+            // Check installation
+            checkInstallBtn.addEventListener('click', async () => {
+                checkInstallBtn.disabled = true;
+                showStepStatus(1, 'checking', 'Checking for Foundry Local...');
+
+                try {
+                    const result = await window.mainAPI.checkFoundryInstalled();
+                    if (result.installed) {
+                        foundryInstalled = true;
+                        showStepStatus(1, 'success', 'Foundry Local is installed!');
+                        // Auto-advance to step 2 after brief delay
+                        setTimeout(() => {
+                            setSetupStep(2);
+                            hideStepStatus(1);
+                        }, 1000);
+                    } else {
+                        showStepStatus(1, 'error', 'Foundry Local not detected. Please run the install command and try again.');
+                    }
+                } catch (error) {
+                    showStepStatus(1, 'error', 'Error checking installation: ' + error.message);
+                }
+
+                checkInstallBtn.disabled = false;
+            });
+
+            // Check models
+            checkModelsBtn.addEventListener('click', async () => {
+                checkModelsBtn.disabled = true;
+                showStepStatus(2, 'checking', 'Checking for cached models...');
+
+                try {
+                    const result = await window.mainAPI.checkModelsAvailable();
+                    if (result.available) {
+                        modelsAvailable = true;
+                        showStepStatus(2, 'success', `Found ${result.count} model(s) ready to use!`);
+                        // Auto-advance to step 3 after brief delay
+                        setTimeout(() => {
+                            setSetupStep(3);
+                            hideStepStatus(2);
+                        }, 1000);
+                    } else {
+                        showStepStatus(2, 'error', 'No models found. Please run the command above to download a model.');
+                    }
+                } catch (error) {
+                    showStepStatus(2, 'error', 'Error checking models: ' + error.message);
+                }
+
+                checkModelsBtn.disabled = false;
+            });
+
+            // Start PrivateGPT
+            startPrivateGPTBtn.addEventListener('click', () => {
+                hideSetupSplash();
+                loadLocalModels();
+            });
+
             // Foundry lifecycle events
             window.mainAPI.onFoundryStarting(() => {
                 showLoading('Starting Foundry Local...');
             });
 
-            window.mainAPI.onFoundryReady(() => {
+            window.mainAPI.onFoundryReady(async () => {
                 hideLoading();
                 hideFoundryModal();
-                loadLocalModels();
+                // Check if models are available
+                const modelsResult = await window.mainAPI.checkModelsAvailable();
+                if (modelsResult.available) {
+                    // Everything is ready - skip setup
+                    hideSetupSplash();
+                    loadLocalModels();
+                } else {
+                    // Foundry is running but no models - show setup at step 2
+                    foundryInstalled = true;
+                    setSetupStep(2);
+                    showSetupSplash();
+                }
             });
 
             window.mainAPI.onFoundryNotInstalled(() => {
                 hideLoading();
-                showFoundryModal();
+                // Show setup splash at step 1
+                foundryInstalled = false;
+                setSetupStep(1);
+                showSetupSplash();
             });
 
             window.mainAPI.onFoundryFailed((error) => {
                 hideLoading();
-                showError(`Foundry Local failed to start: ${error || 'Unknown error'}`);
+                // Could be not installed or failed to start - show setup
+                setSetupStep(1);
+                showSetupSplash();
             });
 
-            // Modal buttons
+            // Modal buttons (legacy - keep for compatibility)
             retryBtn.addEventListener('click', async () => {
                 hideFoundryModal();
                 showLoading('Retrying Foundry Local...');
@@ -1289,7 +1885,8 @@
                     loadLocalModels();
                 } else if (result.status === 'not-installed') {
                     hideLoading();
-                    showFoundryModal();
+                    setSetupStep(1);
+                    showSetupSplash();
                 } else {
                     hideLoading();
                     showError(`Foundry Local failed: ${result.error || 'Unknown error'}`);
