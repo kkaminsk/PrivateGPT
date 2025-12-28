@@ -1,0 +1,36 @@
+{
+  "name": "privategpt",
+  "version": "1.0.0",
+  "description": "Privacy-focused chat application with ephemeral data storage and local AI models",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "foundry-local-sdk": "^0.3.0",
+    "openai": "^4.98.0"
+  },
+  "build": {
+    "appId": "com.privategpt.app",
+    "productName": "PrivateGPT",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  }
+}
