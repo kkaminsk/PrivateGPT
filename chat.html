@@ -607,6 +607,50 @@
             font-size: 16px;
         }
 
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 0;
+        }
+
+        .typing-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: typing-bounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-indicator .dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-indicator .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        .theme-high-contrast .typing-indicator .dot {
+            width: 10px;
+            height: 10px;
+        }
+
         /* Modal Dialog */
         .modal-overlay {
             position: fixed;
@@ -1019,6 +1063,14 @@
                 renderAttachments();
             }
 
+            // Create typing indicator HTML
+            function createTypingIndicator() {
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator';
+                indicator.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+                return indicator;
+            }
+
             // Send message
             async function sendMessage() {
                 const message = messageInput.value.trim();
@@ -1034,27 +1086,53 @@
                 const assistantMessage = addMessage('', 'assistant');
                 const messageContent = assistantMessage.querySelector('.message-content');
 
+                // Show typing indicator
+                const typingIndicator = createTypingIndicator();
+                messageContent.appendChild(typingIndicator);
+                scrollToBottom();
+
                 messages.push({ role: 'user', content: message || 'Please analyze the attached files.' });
 
                 try {
                     let fullResponse = '';
+                    let firstChunkReceived = false;
 
                     window.mainAPI.removeAllChatListeners();
 
                     window.mainAPI.onChatChunk((chunk) => {
+                        // Hide typing indicator on first chunk
+                        if (!firstChunkReceived) {
+                            firstChunkReceived = true;
+                            typingIndicator.remove();
+                        }
                         fullResponse += chunk;
                         messageContent.textContent = fullResponse;
                         scrollToBottom();
                     });
 
                     window.mainAPI.onChatComplete(() => {
+                        // Ensure typing indicator is removed
+                        if (typingIndicator.parentNode) {
+                            typingIndicator.remove();
+                        }
                         messages.push({ role: 'assistant', content: fullResponse });
                         sendButton.disabled = !modelSelected;
                         scrollToBottom();
                     });
 
-                    await window.mainAPI.sendMessage(messages);
+                    const result = await window.mainAPI.sendMessage(messages);
+                    if (!result.success) {
+                        // Remove typing indicator on error
+                        if (typingIndicator.parentNode) {
+                            typingIndicator.remove();
+                        }
+                        showError(`Error: ${result.error}`);
+                    }
                 } catch (error) {
+                    // Remove typing indicator on error
+                    if (typingIndicator.parentNode) {
+                        typingIndicator.remove();
+                    }
                     showError(`Error: ${error.message}`);
                     sendButton.disabled = !modelSelected;
                 }

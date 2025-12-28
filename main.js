@@ -295,6 +295,8 @@ async function sendMessage(messages) {
     mainWindow.webContents.send('chat-complete')
     return { success: true }
   } catch (error) {
+    // Always send chat-complete on error so frontend can recover
+    mainWindow.webContents.send('chat-complete')
     return { success: false, error: error.message }
   }
 }
