@@ -160,6 +160,11 @@ ipcMain.handle('get-vision-support', async () => {
   return { hasVisionSupport }
 })
 
+// Retry starting Foundry service
+ipcMain.handle('retry-foundry-start', async () => {
+  return ensureFoundryRunning()
+})
+
 /**
  * Check if model likely supports vision based on model ID/name
  * @param {string} modelId
@@ -169,6 +174,67 @@ function checkVisionSupport(modelId) {
   const visionKeywords = ['vision', 'llava', 'multimodal', 'mm', 'visual', 'image']
   const lowerModelId = modelId.toLowerCase()
   return visionKeywords.some(keyword => lowerModelId.includes(keyword))
+}
+
+/**
+ * Ensure Foundry Local service is running
+ * Attempts to start the service if not running, with retry logic
+ * @returns {Promise<{status: 'running'|'started'|'not-installed'|'failed', error?: string}>}
+ */
+async function ensureFoundryRunning() {
+  const MAX_RETRIES = 3
+  const RETRY_DELAY = 1000
+  const STARTUP_TIMEOUT = 10000
+
+  console.log('[PrivateGPT] Checking Foundry Local status...')
+
+  // Check if already running
+  try {
+    if (foundryManager.isServiceRunning()) {
+      console.log('[PrivateGPT] Foundry Local is already running')
+      return { status: 'running' }
+    }
+  } catch (error) {
+    // isServiceRunning threw - likely not installed
+    console.log('[PrivateGPT] Foundry Local check failed:', error.message)
+    return { status: 'not-installed', error: error.message }
+  }
+
+  // Try to start the service
+  console.log('[PrivateGPT] Foundry Local not running, attempting to start...')
+  mainWindow?.webContents.send('foundry-starting')
+
+  try {
+    await foundryManager.startService()
+  } catch (error) {
+    console.log('[PrivateGPT] Failed to start Foundry Local:', error.message)
+    // startService failed - likely not installed
+    return { status: 'not-installed', error: error.message }
+  }
+
+  // Wait for service to be ready with retry logic
+  const startTime = Date.now()
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
+
+    try {
+      if (foundryManager.isServiceRunning()) {
+        console.log(`[PrivateGPT] Foundry Local started successfully (attempt ${attempt})`)
+        mainWindow?.webContents.send('foundry-ready')
+        return { status: 'started' }
+      }
+    } catch (error) {
+      console.log(`[PrivateGPT] Service check attempt ${attempt} failed:`, error.message)
+    }
+
+    if (Date.now() - startTime > STARTUP_TIMEOUT) {
+      break
+    }
+  }
+
+  console.log('[PrivateGPT] Foundry Local startup timed out')
+  mainWindow?.webContents.send('foundry-failed')
+  return { status: 'failed', error: 'Service startup timed out' }
 }
 
 /**
@@ -259,11 +325,15 @@ async function createWindow() {
   console.log('[PrivateGPT] Creating main window')
   mainWindow.loadFile('chat.html')
 
-  // Check if Foundry Local is running
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (!foundryManager.isServiceRunning()) {
-      mainWindow.webContents.send('foundry-not-running')
+  // Check and start Foundry Local on page load
+  mainWindow.webContents.on('did-finish-load', async () => {
+    const result = await ensureFoundryRunning()
+    if (result.status === 'not-installed') {
+      mainWindow.webContents.send('foundry-not-installed')
+    } else if (result.status === 'failed') {
+      mainWindow.webContents.send('foundry-failed', result.error)
     }
+    // 'running' and 'started' are handled via foundry-ready event
   })
 
   return mainWindow

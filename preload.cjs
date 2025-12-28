@@ -35,13 +35,23 @@ try {
         onAttachmentWarnings: (callback) => ipcRenderer.on('attachment-warnings', (_, warnings) => callback(warnings)),
         onAttachmentsCleared: (callback) => ipcRenderer.on('attachments-cleared', () => callback()),
 
-        // Error event listeners
-        onFoundryNotRunning: (callback) => ipcRenderer.on('foundry-not-running', () => callback()),
+        // Foundry lifecycle events
+        onFoundryStarting: (callback) => ipcRenderer.on('foundry-starting', () => callback()),
+        onFoundryReady: (callback) => ipcRenderer.on('foundry-ready', () => callback()),
+        onFoundryNotInstalled: (callback) => ipcRenderer.on('foundry-not-installed', () => callback()),
+        onFoundryFailed: (callback) => ipcRenderer.on('foundry-failed', (_, error) => callback(error)),
+        retryFoundryStart: () => ipcRenderer.invoke('retry-foundry-start'),
 
         // Cleanup
         removeAllAttachmentListeners: () => {
             ipcRenderer.removeAllListeners('attachment-warnings');
             ipcRenderer.removeAllListeners('attachments-cleared');
+        },
+        removeAllFoundryListeners: () => {
+            ipcRenderer.removeAllListeners('foundry-starting');
+            ipcRenderer.removeAllListeners('foundry-ready');
+            ipcRenderer.removeAllListeners('foundry-not-installed');
+            ipcRenderer.removeAllListeners('foundry-failed');
         }
     });
 

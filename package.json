@@ -9,6 +9,8 @@
     "test": "node --test test/*.test.js",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
+    "build:win:msix": "electron-builder --win appx",
+    "build:win:nsis": "electron-builder --win nsis",
     "build:mac": "electron-builder --mac"
   },
   "author": "",
@@ -28,7 +30,22 @@
       "output": "dist"
     },
     "win": {
-      "target": "nsis"
+      "target": "appx"
+    },
+    "appx": {
+      "identityName": "PrivateGPT",
+      "publisher": "CN=PrivateGPT",
+      "publisherDisplayName": "PrivateGPT",
+      "applicationId": "PrivateGPT",
+      "displayName": "PrivateGPT",
+      "languages": ["en-US"],
+      "showNameOnTiles": true,
+      "backgroundColor": "#1a1a2e"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true
     },
     "mac": {
       "target": "dmg"

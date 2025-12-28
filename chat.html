@@ -372,9 +372,198 @@
             color: #4ade80;
             font-size: 14px;
         }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #4ade8030;
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #4ade80;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        /* Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-dialog {
+            background: #1a1a2e;
+            border: 2px solid #4ade80;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            color: #f87171;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            color: #a0a0a0;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .modal-body p {
+            margin: 0 0 12px 0;
+        }
+
+        .install-command {
+            background: #0d0d1a;
+            border: 1px solid #4ade8040;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            color: #4ade80;
+            word-break: break-all;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .install-command:hover {
+            background: #151525;
+        }
+
+        .install-command::after {
+            content: 'Click to copy';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #666;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
+        .modal-btn-primary {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+
+        .modal-btn-primary:hover {
+            background: #86efac;
+        }
+
+        .modal-btn-secondary {
+            background: transparent;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+
+        .modal-btn-secondary:hover {
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .modal-link {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .modal-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">Starting Foundry Local...</div>
+    </div>
+
+    <!-- Foundry Not Installed Modal -->
+    <div id="foundry-modal" class="modal-overlay hidden">
+        <div class="modal-dialog">
+            <h3 class="modal-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Foundry Local Required
+            </h3>
+            <div class="modal-body">
+                <p>PrivateGPT requires Foundry Local to run AI models on your device. It appears Foundry Local is not installed.</p>
+                <p>Download and install from:</p>
+                <p><a href="https://github.com/microsoft/Foundry-Local/releases" class="modal-link" target="_blank">https://github.com/microsoft/Foundry-Local/releases</a></p>
+                <p>Install using PowerShell:</p>
+                <div class="install-command" id="install-command" title="Click to copy">
+                    Add-AppxPackage foundry-local.msix
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-secondary" id="retry-btn">Retry</button>
+                <button class="modal-btn modal-btn-primary" id="download-btn">Download</button>
+            </div>
+        </div>
+    </div>
+
     <div class="chat-container">
         <!-- Header Section -->
         <div class="chat-header">
@@ -718,12 +907,82 @@
                 renderAttachments();
             });
 
-            window.mainAPI.onFoundryNotRunning(() => {
-                showError('Foundry Local service is not running. Please start it and restart PrivateGPT.');
+            // Foundry lifecycle UI elements
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            const foundryModal = document.getElementById('foundry-modal');
+            const retryBtn = document.getElementById('retry-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const installCommand = document.getElementById('install-command');
+
+            function showLoading(text) {
+                loadingText.textContent = text;
+                loadingOverlay.classList.remove('hidden');
+            }
+
+            function hideLoading() {
+                loadingOverlay.classList.add('hidden');
+            }
+
+            function showFoundryModal() {
+                foundryModal.classList.remove('hidden');
+            }
+
+            function hideFoundryModal() {
+                foundryModal.classList.add('hidden');
+            }
+
+            // Foundry lifecycle events
+            window.mainAPI.onFoundryStarting(() => {
+                showLoading('Starting Foundry Local...');
             });
 
-            // Initial load
-            loadLocalModels();
+            window.mainAPI.onFoundryReady(() => {
+                hideLoading();
+                hideFoundryModal();
+                loadLocalModels();
+            });
+
+            window.mainAPI.onFoundryNotInstalled(() => {
+                hideLoading();
+                showFoundryModal();
+            });
+
+            window.mainAPI.onFoundryFailed((error) => {
+                hideLoading();
+                showError(`Foundry Local failed to start: ${error || 'Unknown error'}`);
+            });
+
+            // Modal buttons
+            retryBtn.addEventListener('click', async () => {
+                hideFoundryModal();
+                showLoading('Retrying Foundry Local...');
+                const result = await window.mainAPI.retryFoundryStart();
+                if (result.status === 'running' || result.status === 'started') {
+                    hideLoading();
+                    loadLocalModels();
+                } else if (result.status === 'not-installed') {
+                    hideLoading();
+                    showFoundryModal();
+                } else {
+                    hideLoading();
+                    showError(`Foundry Local failed: ${result.error || 'Unknown error'}`);
+                }
+            });
+
+            downloadBtn.addEventListener('click', () => {
+                window.open('https://github.com/microsoft/Foundry-Local/releases', '_blank');
+            });
+
+            installCommand.addEventListener('click', () => {
+                navigator.clipboard.writeText('Add-AppxPackage foundry-local.msix');
+                installCommand.style.borderColor = '#4ade80';
+                setTimeout(() => {
+                    installCommand.style.borderColor = '';
+                }, 1000);
+            });
+
+            // Initial load - models will be loaded after Foundry ready event
         });
     </script>
 </body>

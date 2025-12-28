@@ -66,10 +66,52 @@ A privacy-focused chat application with ephemeral data storage and local AI mode
 3. Send your message - attachments are included in context
 4. For images, use a vision-capable model (e.g., LLaVA) for analysis
 
+## Installation
+
+### MSIX Package (Recommended for Windows)
+
+PrivateGPT is distributed as an MSIX package for modern Windows deployment.
+
+**Requirements:**
+- Windows 10 version 1809 or later
+- Foundry Local installed
+
+**Standard Installation:**
+1. Download `PrivateGPT.msix` from releases
+2. Double-click to install, or use PowerShell:
+   ```powershell
+   Add-AppxPackage PrivateGPT.msix
+   ```
+
+**Enterprise Deployment:**
+
+Use the bootstrapper script for automated deployment:
+
+```powershell
+# Interactive installation
+.\Install-PrivateGPT.ps1
+
+# Silent installation (for SCCM/Intune)
+.\Install-PrivateGPT.ps1 -Silent
+
+# Offline installation with local Foundry package
+.\Install-PrivateGPT.ps1 -Silent -FoundryPath "C:\Packages\foundry-local.msix"
+```
+
+### Foundry Local Auto-Start
+
+PrivateGPT automatically starts Foundry Local if it's installed but not running. If Foundry Local is not installed, you'll see a dialog with installation instructions.
+
 ## Building
 
 ```powershell
-# Windows
+# Windows MSIX (recommended)
+npm run build:win:msix
+
+# Windows NSIS installer (legacy)
+npm run build:win:nsis
+
+# Windows (default - MSIX)
 npm run build:win
 
 # macOS
@@ -77,6 +119,19 @@ npm run build:mac
 ```
 
 Built application available in `dist/` directory.
+
+### Code Signing (Production)
+
+For production MSIX builds, you'll need a code signing certificate:
+
+1. Obtain a code signing certificate from a trusted CA
+2. Update `package.json` with your publisher identity:
+   ```json
+   "appx": {
+     "publisher": "CN=Your Company, O=Your Company, L=City, S=State, C=US"
+   }
+   ```
+3. Sign the package using `signtool` or electron-builder's signing options
 
 ## Testing
 
@@ -126,13 +181,25 @@ PrivateGPT/
 
 ## Troubleshooting
 
+### "Foundry Local Required" dialog appears
+- Foundry Local is not installed on your system
+- Download from [Foundry Releases](https://github.com/microsoft/Foundry-Local/releases)
+- Install using: `Add-AppxPackage foundry-local.msix`
+- Click "Retry" after installation
+
+### "Starting Foundry Local..." takes too long
+- First launch may take 10-30 seconds for service initialization
+- If it times out, check Windows Event Viewer for Foundry errors
+- Ensure no antivirus is blocking Foundry Local
+
 ### "No local models found"
 - Ensure Foundry Local is running
 - Download models using Foundry Local CLI or UI
 
-### "Foundry Local service is not running"
-- Start the Foundry Local service
-- Restart PrivateGPT
+### Foundry auto-start fails
+- Check if Foundry Local is properly installed
+- Try starting Foundry Local manually first
+- Check if another process is using the required ports
 
 ### Image analysis not working
 - Check if your model supports vision (e.g., LLaVA variants)
