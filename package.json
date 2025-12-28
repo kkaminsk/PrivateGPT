@@ -1,6 +1,6 @@
 {
   "name": "privategpt",
-  "version": "1.0.0",
+  "version": "0.5.0-alpha",
   "description": "Privacy-focused chat application with ephemeral data storage and local AI models",
   "main": "main.js",
   "type": "module",
@@ -26,11 +26,13 @@
   "build": {
     "appId": "com.privategpt.app",
     "productName": "PrivateGPT",
+    "icon": "icon/icon512.png",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "target": "appx"
+      "target": "appx",
+      "icon": "icon/icon256.png"
     },
     "appx": {
       "identityName": "PrivateGPT",
@@ -40,7 +42,14 @@
       "displayName": "PrivateGPT",
       "languages": ["en-US"],
       "showNameOnTiles": true,
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#1a1a2e",
+      "assets": {
+        "square44x44Logo": "icon/icon44.png",
+        "square150x150Logo": "icon/icon150.png",
+        "wide310x150Logo": "icon/icon310.png",
+        "square310x310Logo": "icon/icon310.png",
+        "storeLogo": "icon/icon50.png"
+      }
     },
     "nsis": {
       "oneClick": false,
