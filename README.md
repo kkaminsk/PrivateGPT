@@ -1,63 +1,147 @@
-# Foundry Local Chat Demo
+# PrivateGPT
 
-A simple Electron Chat application that can chat with cloud and Foundry local models.
+A privacy-focused chat application with ephemeral data storage and local AI models. All conversations are encrypted in memory and completely erased when you close the app.
+
+## Privacy Guarantees
+
+- **AES-256-GCM Encryption**: All user data (messages, file contents) encrypted in memory
+- **Ephemeral Storage**: No data ever written to disk
+- **Startup Purge**: Detects and removes any residual data on launch
+- **Shutdown Purge**: Securely clears all memory on exit
+- **Local Models Only**: No cloud connectivity - all processing on-device
+
+## Features
+
+- Chat with local AI models via Foundry Local SDK
+- File attachments with drag-and-drop support
+- Vision API integration for image analysis (with compatible models)
+- Modern, privacy-themed UI
+
+## Supported File Types
+
+### Text Files (max 100KB)
+- Markdown: `.md`
+- Plain text: `.txt`
+- JSON: `.json`
+- XML: `.xml`
+- YAML: `.yaml`, `.yml`
+- CSV: `.csv`
+
+### Image Files (max 10MB)
+- JPEG: `.jpg`, `.jpeg`
+- PNG: `.png`
+- GIF: `.gif`
+- WebP: `.webp`
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
-  - To install Node.js on Windows, run:
-    ```powershell
-    winget install OpenJS.NodeJS
-    ```
-  - npm comes bundled with Node.js
+- Node.js v18 or higher
+  ```powershell
+  winget install OpenJS.NodeJS
+  ```
+- Foundry Local installed and running
+  - Download from [Foundry Releases](https://github.com/microsoft/Foundry-Local/releases)
+  - Install: `add-appxpackage <foundry>.msix`
 
-## Setup Instructions
-1. Download the latest Foundry .MSIX and install for your processor:
-   [Foundry Releases](https://github.com/microsoft/Foundry-Local/releases)
-   Then install it using the following powershell command.
-   ```powershell
-   add-appxpackage <foundryfile>.msix
-   ```
- 
-2. Install dependencies:
+## Setup
+
+1. Install dependencies:
    ```powershell
    npm install
    ```
 
-3. Set the following environment variables to your Cloud AI Service
-   ```powershell
-   YOUR_API_KEY
-   YOUR_ENDPOINT
-   YOUR_MODEL_NAME
-   ```
+2. Ensure Foundry Local service is running
 
-4. Start the application:
+3. Start the application:
    ```powershell
    npm start
    ```
 
-## Building the Application (not necessary for testing)
+## Usage
 
-To build the application for your platform:
+1. Select a local model from the dropdown
+2. Type a message or attach files:
+   - Click the paperclip button to open file picker
+   - Drag and drop files onto the chat window
+3. Send your message - attachments are included in context
+4. For images, use a vision-capable model (e.g., LLaVA) for analysis
+
+## Building
+
 ```powershell
-# For all platforms
-npm run build
-
-# For Windows specifically
+# Windows
 npm run build:win
+
+# macOS
+npm run build:mac
 ```
 
-The built application will be available in the `dist` directory.
+Built application available in `dist/` directory.
+
+## Testing
+
+```powershell
+npm test
+```
+
+Runs 48 unit and integration tests covering:
+- Encryption/decryption
+- File processing
+- Attachment handling
+- Purge functionality
 
 ## Project Structure
 
-- `main.js` - Main Electron process file
-- `chat.html` - Main application window
-- `preload.cjs` - Preload script for secure IPC communication
+```
+PrivateGPT/
+├── main.js              # Electron main process
+├── preload.cjs          # Secure IPC bridge
+├── chat.html            # UI and renderer logic
+├── secure-session.js    # AES-256-GCM encryption
+├── file-processor.js    # File handling and validation
+├── purge.js             # Startup/shutdown data purge
+└── test/                # Unit and integration tests
+```
 
-## Dependencies
+## Security Architecture
 
-- Electron - Cross-platform desktop application framework
-- foundry-local-sdk - Local model integration
-- OpenAI - Cloud model integration
+```
+┌─────────────────────────────────────────────────────────┐
+│                    PrivateGPT                           │
+├─────────────────────────────────────────────────────────┤
+│  SecureSessionManager                                   │
+│  ├── Session key: crypto.randomBytes(32)               │
+│  ├── Encryption: AES-256-GCM                           │
+│  └── Storage: In-memory Map (encrypted values)         │
+├─────────────────────────────────────────────────────────┤
+│  Startup Purge                                          │
+│  └── Scans temp dirs, deletes PrivateGPT artifacts     │
+├─────────────────────────────────────────────────────────┤
+│  Shutdown Purge                                         │
+│  ├── Overwrites buffers with zeros                     │
+│  ├── Clears all references                             │
+│  └── Discards encryption key                           │
+└─────────────────────────────────────────────────────────┘
+```
 
+## Troubleshooting
+
+### "No local models found"
+- Ensure Foundry Local is running
+- Download models using Foundry Local CLI or UI
+
+### "Foundry Local service is not running"
+- Start the Foundry Local service
+- Restart PrivateGPT
+
+### Image analysis not working
+- Check if your model supports vision (e.g., LLaVA variants)
+- Non-vision models will show a warning when images are attached
+
+### File attachment rejected
+- Check file size limits (100KB text, 10MB images)
+- Verify file extension is in the supported list
+
+## License
+
+ISC

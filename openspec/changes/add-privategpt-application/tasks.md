@@ -101,11 +101,11 @@
   - [x] 8.2.1 Test text file reading
   - [x] 8.2.2 Test image base64 encoding
   - [x] 8.2.3 Test size limit enforcement
-- [ ] 8.3 Integration tests
-  - [ ] 8.3.1 Test full message flow with attachment
-  - [ ] 8.3.2 Test startup purge clears residual files
-  - [ ] 8.3.3 Test shutdown purge clears memory
-- [ ] 8.4 Manual testing
+- [x] 8.3 Integration tests
+  - [x] 8.3.1 Test full message flow with attachment
+  - [x] 8.3.2 Test startup purge clears residual files
+  - [x] 8.3.3 Test shutdown purge clears memory
+- [ ] 8.4 Manual testing (requires user interaction)
   - [ ] 8.4.1 Test all supported file types
   - [ ] 8.4.2 Test drag-drop functionality
   - [ ] 8.4.3 Test with vision-capable model
@@ -113,7 +113,7 @@
 
 ## 9. Documentation
 
-- [ ] 9.1 Create README.md with setup instructions
-- [ ] 9.2 Document privacy guarantees
-- [ ] 9.3 Document supported file types and limits
-- [ ] 9.4 Add troubleshooting section
+- [x] 9.1 Create README.md with setup instructions
+- [x] 9.2 Document privacy guarantees
+- [x] 9.3 Document supported file types and limits
+- [x] 9.4 Add troubleshooting section
