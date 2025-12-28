@@ -192,6 +192,7 @@ async function ensureFoundryRunning() {
   try {
     if (foundryManager.isServiceRunning()) {
       console.log('[PrivateGPT] Foundry Local is already running')
+      mainWindow?.webContents.send('foundry-ready')
       return { status: 'running' }
     }
   } catch (error) {
