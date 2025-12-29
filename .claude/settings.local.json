@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start)",
+      "Bash(openspec list:*)",
+      "Bash(mkdir:*)",
+      "Bash(openspec validate:*)",
+      "WebSearch",
+      "Bash(node --check:*)"
+    ]
+  }
+}

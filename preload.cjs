@@ -11,7 +11,7 @@ try {
 
     contextBridge.exposeInMainWorld('mainAPI', {
         // Chat functions
-        sendMessage: (messages) => ipcRenderer.invoke('send-message', messages),
+        sendMessage: (messages, maxTokens) => ipcRenderer.invoke('send-message', messages, maxTokens),
         onChatChunk: (callback) => ipcRenderer.on('chat-chunk', (_, chunk) => callback(chunk)),
         onChatComplete: (callback) => ipcRenderer.on('chat-complete', () => callback()),
         removeAllChatListeners: () => {

@@ -16,6 +16,23 @@ let apiKey = ""
 let currentModelId = null
 let hasVisionSupport = false
 
+// Known model context sizes (tokens)
+// Models not in this list will not show context indicator
+const MODEL_CONTEXT_SIZES = {
+  'phi-3-mini-4k': 4096,
+  'phi-3-mini-128k': 131072,
+  'phi-4-mini': 131072,
+  'phi-4-mini-instruct': 131072,
+  'llama-3.2-1b': 131072,
+  'llama-3.2-3b': 131072,
+  'qwen2.5-0.5b': 32768,
+  'qwen2.5-1.5b': 32768,
+  'qwen2.5-3b': 32768,
+  'mistral-7b': 32768,
+  'deepseek-r1-distill-qwen-1.5b': 65536,
+  'deepseek-r1-distill-qwen-7b': 65536
+}
+
 // Initialize secure session manager
 const sessionManager = new SecureSessionManager()
 
@@ -25,8 +42,8 @@ const foundryManager = new FoundryLocalManager()
 // IPC Handlers
 
 // Send message to AI model
-ipcMain.handle('send-message', async (_, messages) => {
-  return sendMessage(messages)
+ipcMain.handle('send-message', async (_, messages, maxTokens = 2048) => {
+  return sendMessage(messages, maxTokens)
 })
 
 // Get list of local models
@@ -53,6 +70,9 @@ ipcMain.handle('switch-model', async (_, modelId) => {
     // Check for vision support (heuristic based on model name)
     hasVisionSupport = checkVisionSupport(modelId)
 
+    // Get context size if known
+    const contextSize = getModelContextSize(modelId)
+
     aiClient = new OpenAI({
       apiKey: apiKey,
       baseURL: endpoint
@@ -65,7 +85,8 @@ ipcMain.handle('switch-model', async (_, modelId) => {
       success: true,
       endpoint: endpoint,
       modelName: modelName,
-      hasVisionSupport: hasVisionSupport
+      hasVisionSupport: hasVisionSupport,
+      contextSize: contextSize
     }
   } catch (error) {
     return { success: false, error: error.message }
@@ -208,6 +229,26 @@ function checkVisionSupport(modelId) {
 }
 
 /**
+ * Get context size for a model if known
+ * @param {string} modelId
+ * @returns {number|null} Context size in tokens, or null if unknown
+ */
+function getModelContextSize(modelId) {
+  const lowerModelId = modelId.toLowerCase()
+  // Check for exact match first
+  if (MODEL_CONTEXT_SIZES[lowerModelId]) {
+    return MODEL_CONTEXT_SIZES[lowerModelId]
+  }
+  // Check for partial match (model ID might have suffixes like -cuda-gpu)
+  for (const [key, value] of Object.entries(MODEL_CONTEXT_SIZES)) {
+    if (lowerModelId.includes(key) || key.includes(lowerModelId)) {
+      return value
+    }
+  }
+  return null
+}
+
+/**
  * Ensure Foundry Local service is running
  * Attempts to start the service if not running, with retry logic
  * @returns {Promise<{status: 'running'|'started'|'not-installed'|'failed', error?: string}>}
@@ -272,8 +313,9 @@ async function ensureFoundryRunning() {
 /**
  * Send message to AI model
  * @param {object[]} messages - Chat messages
+ * @param {number} maxTokens - Maximum tokens for response
  */
-async function sendMessage(messages) {
+async function sendMessage(messages, maxTokens = 2048) {
   try {
     if (!aiClient) {
       throw new Error('No model selected. Please select a local model first.')
@@ -313,6 +355,7 @@ async function sendMessage(messages) {
     const stream = await aiClient.chat.completions.create({
       model: modelName,
       messages: processedMessages,
+      max_tokens: maxTokens,
       stream: true
     })
 
