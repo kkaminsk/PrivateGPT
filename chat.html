@@ -774,6 +774,63 @@
             height: 10px;
         }
 
+        /* Copy Button Styles */
+        .message-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+        }
+
+        .message:hover .copy-button {
+            opacity: 1;
+        }
+
+        .copy-button:hover {
+            background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .copy-button.copied {
+            background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            opacity: 1;
+        }
+
+        .copy-button svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .theme-high-contrast .copy-button {
+            border-width: 2px;
+            opacity: 1;
+        }
+
+        .theme-high-contrast .copy-button:focus {
+            outline: 3px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+
         /* Modal Dialog */
         .modal-overlay {
             position: fixed;
@@ -1601,11 +1658,32 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${sender}`;
 
+                const wrapper = document.createElement('div');
+                wrapper.className = 'message-wrapper';
+
                 const content = document.createElement('div');
                 content.className = 'message-content';
                 content.textContent = text;
 
-                messageDiv.appendChild(content);
+                wrapper.appendChild(content);
+
+                // Add copy button for assistant messages only
+                if (sender === 'assistant') {
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'copy-button';
+                    copyBtn.title = 'Copy to clipboard';
+                    copyBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        <span class="copy-text">Copy</span>
+                    `;
+                    copyBtn.addEventListener('click', () => copyMessageToClipboard(copyBtn, content));
+                    wrapper.appendChild(copyBtn);
+                }
+
+                messageDiv.appendChild(wrapper);
                 chatMessages.appendChild(messageDiv);
                 scrollToBottom();
                 return messageDiv;
@@ -1613,6 +1691,35 @@
 
             function scrollToBottom() {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Copy message to clipboard with visual feedback
+            async function copyMessageToClipboard(button, contentElement) {
+                const text = contentElement.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+
+                    // Show success feedback
+                    button.classList.add('copied');
+                    const copyText = button.querySelector('.copy-text');
+                    const originalText = copyText.textContent;
+                    copyText.textContent = 'Copied!';
+
+                    // Update icon to checkmark
+                    const svg = button.querySelector('svg');
+                    const originalSvg = svg.innerHTML;
+                    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+
+                    // Reset after 1.5 seconds
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        copyText.textContent = originalText;
+                        svg.innerHTML = originalSvg;
+                    }, 1500);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    showError('Failed to copy to clipboard');
+                }
             }
 
             function showError(msg) {
