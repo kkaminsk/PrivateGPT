@@ -122,16 +122,53 @@ Built application available in `dist/` directory.
 
 ### Code Signing (Production)
 
-For production MSIX builds, you'll need a code signing certificate:
+For production MSIX builds, use Azure Trusted Signing with the CodeSigning solution.
 
-1. Obtain a code signing certificate from a trusted CA
-2. Update `package.json` with your publisher identity:
+**Prerequisites:**
+- CodeSigning solution installed (sibling directory or custom path)
+- Azure Trusted Signing account with certificate profile
+- PowerShell 7+ (`pwsh`)
+
+**Setup:**
+
+1. Install signing tools (one-time):
+   ```powershell
+   ..\CodeSigning\scripts\Install-SigningTools.ps1
+   ```
+
+2. Create metadata configuration (one-time per environment):
+   ```powershell
+   ..\CodeSigning\scripts\New-SigningMetadata.ps1 -ProfileName "production"
+   ```
+
+3. Update `package.json` publisher to match your certificate subject:
    ```json
    "appx": {
-     "publisher": "CN=Your Company, O=Your Company, L=City, S=State, C=US"
+     "publisher": "CN=Your Company, O=Your Organization, L=City, S=State, C=US"
    }
    ```
-3. Sign the package using `signtool` or electron-builder's signing options
+
+**Building Signed MSIX:**
+
+```powershell
+# Authenticate to Azure (interactive, supports MFA)
+Connect-AzAccount
+
+# Build and sign in one step
+$env:CODESIGNING_METADATA = "C:\path\to\metadata-production.json"
+npm run build:win:msix:signed
+```
+
+**Environment Variables:**
+| Variable | Description |
+|----------|-------------|
+| `CODESIGNING_METADATA` | Path to metadata.json (required for signed builds) |
+| `CODESIGNING_PATH` | Path to CodeSigning solution (default: `../CodeSigning`) |
+
+**Verify Signature:**
+```powershell
+Get-AuthenticodeSignature dist\*.appx
+```
 
 ## Testing
 

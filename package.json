@@ -10,6 +10,7 @@
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:win:msix": "electron-builder --win appx",
+    "build:win:msix:signed": "npm run build:win:msix && pwsh -File scripts/Sign-MSIX.ps1",
     "build:win:nsis": "electron-builder --win nsis",
     "build:mac": "electron-builder --mac"
   },
