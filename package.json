@@ -42,14 +42,7 @@
       "displayName": "PrivateGPT",
       "languages": ["en-US"],
       "showNameOnTiles": true,
-      "backgroundColor": "#1a1a2e",
-      "assets": {
-        "square44x44Logo": "icon/icon44.png",
-        "square150x150Logo": "icon/icon150.png",
-        "wide310x150Logo": "icon/icon310.png",
-        "square310x310Logo": "icon/icon310.png",
-        "storeLogo": "icon/icon50.png"
-      }
+      "backgroundColor": "#1a1a2e"
     },
     "nsis": {
       "oneClick": false,
