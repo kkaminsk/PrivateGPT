@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, ipcMain, dialog } from 'electron'
 import { fileURLToPath } from 'url'
 import path from 'path'
+import fs from 'fs'
 import OpenAI from 'openai'
 import { FoundryLocalManager } from 'foundry-local-sdk'
 import { SecureSessionManager } from './secure-session.js'
@@ -96,7 +97,11 @@ ipcMain.handle('switch-model', async (_, modelId) => {
 // Attach a file
 ipcMain.handle('attach-file', async (_, filePath) => {
   try {
-    const result = await FileProcessor.processFile(filePath)
+    // Get model-specific file size limit
+    const contextSize = currentModelId ? getModelContextSize(currentModelId) : null
+    const maxTextBytes = FileProcessor.getMaxTextSizeForModel(contextSize)
+
+    const result = await FileProcessor.processFile(filePath, maxTextBytes)
 
     if (!result.success) {
       return result
@@ -114,7 +119,8 @@ ipcMain.handle('attach-file', async (_, filePath) => {
         id: attachmentId,
         name: result.data.name,
         type: result.data.type,
-        size: result.data.size
+        size: result.data.size,
+        estimatedTokens: result.data.estimatedTokens
       },
       warning: result.warning
     }
@@ -176,9 +182,64 @@ ipcMain.handle('open-file-dialog', async () => {
   return { canceled: result.canceled, filePaths: result.filePaths }
 })
 
+// Save file dialog
+ipcMain.handle('save-file', async (_, content, defaultFilename) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: defaultFilename || 'export.txt',
+      filters: [
+        { name: 'Text Files', extensions: ['txt'] },
+        { name: 'Markdown', extensions: ['md'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+
+    if (result.canceled || !result.filePath) {
+      return { success: true, canceled: true }
+    }
+
+    fs.writeFileSync(result.filePath, content, 'utf8')
+    return { success: true, canceled: false, filePath: result.filePath }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
 // Get vision support status
 ipcMain.handle('get-vision-support', async () => {
   return { hasVisionSupport }
+})
+
+// Get current token usage estimate
+ipcMain.handle('get-token-estimate', async (_, userMessage, conversationHistory) => {
+  try {
+    const contextSize = currentModelId ? getModelContextSize(currentModelId) : null
+    const attachments = sessionManager.getAllAttachments()
+
+    if (!contextSize) {
+      return { success: true, hasContextInfo: false }
+    }
+
+    const validation = FileProcessor.validateTokenLimit(
+      userMessage || '',
+      attachments,
+      conversationHistory || [],
+      contextSize
+    )
+
+    return {
+      success: true,
+      hasContextInfo: true,
+      totalTokens: validation.totalTokens,
+      limit: validation.limit,
+      percentUsed: validation.percentUsed,
+      breakdown: validation.breakdown,
+      warning: validation.warning,
+      valid: validation.valid
+    }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
 })
 
 // Retry starting Foundry service
@@ -246,6 +307,35 @@ function getModelContextSize(modelId) {
     }
   }
   return null
+}
+
+/**
+ * Check if an error is a token/context limit error from Foundry
+ * @param {Error} error - The error to check
+ * @returns {boolean}
+ */
+function isTokenLimitError(error) {
+  const message = error?.message?.toLowerCase() || ''
+  return message.includes('too large') ||
+         message.includes('context') ||
+         message.includes('token') ||
+         message.includes('maximum') ||
+         message.includes('exceeds') ||
+         message.includes('limit')
+}
+
+/**
+ * Create user-friendly message for token limit errors
+ * @param {Error} error - The original error
+ * @param {number} contextSize - Model's context size
+ * @returns {string}
+ */
+function formatTokenLimitError(error, contextSize) {
+  const contextStr = contextSize ? `${(contextSize / 1024).toFixed(0)}K` : 'unknown'
+  return `Message too large for model context (${contextStr} tokens). Suggestions:\n` +
+         `• Attach a smaller file or reduce file content\n` +
+         `• Clear conversation history (New Chat)\n` +
+         `• Switch to a model with larger context window`
 }
 
 /**
@@ -324,6 +414,44 @@ async function sendMessage(messages, maxTokens = 2048) {
     // Get current attachments
     const attachments = sessionManager.getAllAttachments()
 
+    // Get context size for validation
+    const contextSize = currentModelId ? getModelContextSize(currentModelId) : null
+
+    // Pre-send token validation
+    if (contextSize && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1]
+      const userMessage = lastMessage.role === 'user' ? lastMessage.content : ''
+      const previousMessages = messages.slice(0, -1)
+
+      const validation = FileProcessor.validateTokenLimit(
+        userMessage,
+        attachments,
+        previousMessages,
+        contextSize
+      )
+
+      // Send warning if approaching limit
+      if (validation.warning) {
+        mainWindow.webContents.send('token-warning', {
+          message: validation.warning,
+          totalTokens: validation.totalTokens,
+          limit: validation.limit,
+          percentUsed: validation.percentUsed
+        })
+      }
+
+      // Block if exceeding limit
+      if (!validation.valid) {
+        mainWindow.webContents.send('token-limit-exceeded', {
+          message: validation.error,
+          totalTokens: validation.totalTokens,
+          limit: validation.limit,
+          breakdown: validation.breakdown
+        })
+        return { success: false, error: validation.error, tokenLimitExceeded: true }
+      }
+    }
+
     // Process the last user message with attachments
     const processedMessages = [...messages]
     if (attachments.length > 0 && processedMessages.length > 0) {
@@ -371,6 +499,18 @@ async function sendMessage(messages, maxTokens = 2048) {
   } catch (error) {
     // Always send chat-complete on error so frontend can recover
     mainWindow.webContents.send('chat-complete')
+
+    // Check if this is a token limit error from Foundry
+    if (isTokenLimitError(error)) {
+      const contextSize = currentModelId ? getModelContextSize(currentModelId) : null
+      const userFriendlyError = formatTokenLimitError(error, contextSize)
+      mainWindow.webContents.send('token-limit-exceeded', {
+        message: userFriendlyError,
+        originalError: error.message
+      })
+      return { success: false, error: userFriendlyError, tokenLimitExceeded: true }
+    }
+
     return { success: false, error: error.message }
   }
 }

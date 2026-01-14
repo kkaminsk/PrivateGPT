@@ -30,10 +30,16 @@ try {
         getAttachments: () => ipcRenderer.invoke('get-attachments'),
         clearAttachments: () => ipcRenderer.invoke('clear-attachments'),
         openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
+        saveFile: (content, defaultFilename) => ipcRenderer.invoke('save-file', content, defaultFilename),
 
         // Attachment event listeners
         onAttachmentWarnings: (callback) => ipcRenderer.on('attachment-warnings', (_, warnings) => callback(warnings)),
         onAttachmentsCleared: (callback) => ipcRenderer.on('attachments-cleared', () => callback()),
+
+        // Token estimation functions
+        getTokenEstimate: (userMessage, conversationHistory) => ipcRenderer.invoke('get-token-estimate', userMessage, conversationHistory),
+        onTokenWarning: (callback) => ipcRenderer.on('token-warning', (_, data) => callback(data)),
+        onTokenLimitExceeded: (callback) => ipcRenderer.on('token-limit-exceeded', (_, data) => callback(data)),
 
         // Foundry lifecycle events
         onFoundryStarting: (callback) => ipcRenderer.on('foundry-starting', () => callback()),
@@ -56,6 +62,10 @@ try {
             ipcRenderer.removeAllListeners('foundry-ready');
             ipcRenderer.removeAllListeners('foundry-not-installed');
             ipcRenderer.removeAllListeners('foundry-failed');
+        },
+        removeAllTokenListeners: () => {
+            ipcRenderer.removeAllListeners('token-warning');
+            ipcRenderer.removeAllListeners('token-limit-exceeded');
         }
     });
 

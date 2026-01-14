@@ -258,4 +258,155 @@ describe('FileProcessor', () => {
       assert.ok(desc.includes('.png'))
     })
   })
+
+  describe('estimateTokens', () => {
+    it('should return 0 for empty string', () => {
+      assert.strictEqual(FileProcessor.estimateTokens(''), 0)
+      assert.strictEqual(FileProcessor.estimateTokens(null), 0)
+      assert.strictEqual(FileProcessor.estimateTokens(undefined), 0)
+    })
+
+    it('should estimate tokens based on character count', () => {
+      // ~4 chars per token
+      const text = 'Hello world' // 11 chars = ~3 tokens
+      const result = FileProcessor.estimateTokens(text)
+      assert.strictEqual(result, 3) // ceil(11/4)
+    })
+
+    it('should handle long text correctly', () => {
+      const text = 'a'.repeat(1000) // 1000 chars = 250 tokens
+      const result = FileProcessor.estimateTokens(text)
+      assert.strictEqual(result, 250)
+    })
+  })
+
+  describe('getEffectiveContextLimit', () => {
+    it('should return null for null context size', () => {
+      assert.strictEqual(FileProcessor.getEffectiveContextLimit(null), null)
+    })
+
+    it('should subtract response reserve from context size', () => {
+      // Default reserve is 2048 tokens
+      const result = FileProcessor.getEffectiveContextLimit(4096)
+      assert.strictEqual(result, 2048)
+    })
+
+    it('should not return negative values', () => {
+      const result = FileProcessor.getEffectiveContextLimit(1000)
+      assert.ok(result >= 0)
+    })
+  })
+
+  describe('getMaxTextSizeForModel', () => {
+    it('should return default limit for null context size', () => {
+      const result = FileProcessor.getMaxTextSizeForModel(null)
+      assert.strictEqual(result, 100 * 1024) // 100KB default
+    })
+
+    it('should calculate smaller limit for small context models', () => {
+      // 4096 context - 4096 reserve = 0 available tokens
+      const result = FileProcessor.getMaxTextSizeForModel(4096, 4096)
+      assert.strictEqual(result, 0)
+    })
+
+    it('should cap at default limit for large context models', () => {
+      // Large context should still cap at 100KB
+      const result = FileProcessor.getMaxTextSizeForModel(131072)
+      assert.strictEqual(result, 100 * 1024)
+    })
+  })
+
+  describe('estimateMessageTokens', () => {
+    it('should return zero for empty inputs', () => {
+      const result = FileProcessor.estimateMessageTokens('', [], [])
+      assert.strictEqual(result.totalTokens, 0)
+    })
+
+    it('should estimate user message tokens', () => {
+      const result = FileProcessor.estimateMessageTokens('Hello world', [], [])
+      assert.ok(result.totalTokens > 0)
+      assert.ok(result.breakdown.message > 0)
+    })
+
+    it('should include attachment tokens', () => {
+      const attachments = [{ name: 'test.txt', type: 'text', content: 'Some file content here' }]
+      const result = FileProcessor.estimateMessageTokens('Analyze:', attachments, [])
+      assert.ok(result.breakdown.attachments > 0)
+    })
+
+    it('should include conversation history tokens', () => {
+      const history = [
+        { role: 'user', content: 'Previous question' },
+        { role: 'assistant', content: 'Previous answer' }
+      ]
+      const result = FileProcessor.estimateMessageTokens('New message', [], history)
+      assert.ok(result.breakdown.history > 0)
+    })
+  })
+
+  describe('validateTokenLimit', () => {
+    it('should return valid for null context size', () => {
+      const result = FileProcessor.validateTokenLimit('Hello', [], [], null)
+      assert.strictEqual(result.valid, true)
+    })
+
+    it('should return valid for small messages within limit', () => {
+      const result = FileProcessor.validateTokenLimit('Hello', [], [], 4096)
+      assert.strictEqual(result.valid, true)
+      assert.ok(result.percentUsed < 80)
+    })
+
+    it('should return warning when approaching limit', () => {
+      // Create a message that uses ~85% of context
+      const contextSize = 4096
+      const effectiveLimit = contextSize - 2048 // 2048 tokens available
+      const tokensNeeded = Math.ceil(effectiveLimit * 0.85) // ~1741 tokens
+      const charCount = tokensNeeded * 4 // ~6964 chars
+      const longMessage = 'a'.repeat(charCount)
+
+      const result = FileProcessor.validateTokenLimit(longMessage, [], [], contextSize)
+      assert.strictEqual(result.valid, true)
+      assert.ok(result.warning, 'Should have warning for 80%+ usage')
+    })
+
+    it('should return invalid when exceeding limit', () => {
+      // Create a message that exceeds context
+      const contextSize = 4096
+      const effectiveLimit = contextSize - 2048 // 2048 tokens available
+      const tokensNeeded = effectiveLimit + 100 // Over limit
+      const charCount = tokensNeeded * 4
+      const longMessage = 'a'.repeat(charCount)
+
+      const result = FileProcessor.validateTokenLimit(longMessage, [], [], contextSize)
+      assert.strictEqual(result.valid, false)
+      assert.ok(result.error, 'Should have error for exceeding limit')
+    })
+  })
+
+  describe('processTextFile with maxBytes', () => {
+    it('should respect custom maxBytes parameter', async () => {
+      const filePath = path.join(testDir, 'custom-limit.txt')
+      const content = 'x'.repeat(50 * 1024) // 50KB
+      fs.writeFileSync(filePath, content)
+
+      // Request only 10KB max
+      const result = await FileProcessor.processFile(filePath, 10 * 1024)
+
+      assert.strictEqual(result.success, true)
+      assert.strictEqual(result.data.truncated, true)
+      assert.strictEqual(result.data.content.length, 10 * 1024)
+      assert.ok(result.warning.includes('10KB'))
+    })
+
+    it('should include estimatedTokens in result', async () => {
+      const filePath = path.join(testDir, 'with-tokens.txt')
+      const content = 'Hello world test content'
+      fs.writeFileSync(filePath, content)
+
+      const result = await FileProcessor.processFile(filePath)
+
+      assert.strictEqual(result.success, true)
+      assert.ok(result.data.estimatedTokens > 0)
+    })
+  })
 })
