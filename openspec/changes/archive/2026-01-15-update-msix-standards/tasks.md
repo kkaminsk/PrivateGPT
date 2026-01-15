@@ -15,6 +15,6 @@
 
 ## 4. Testing
 - [x] 4.1 Build unsigned MSIX and verify .msix extension (PrivateGPT-0.5.0-alpha.msix)
-- [ ] 4.2 Build signed MSIX and verify signature
+- [x] 4.2 Build signed MSIX and verify signature (Valid, thumbprint: 77900A07...)
 - [ ] 4.3 Test installation on Windows 10 1809+
 - [ ] 4.4 Test installation on Windows 11
