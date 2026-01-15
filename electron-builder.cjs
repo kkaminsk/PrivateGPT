@@ -13,7 +13,7 @@ module.exports = {
   },
   win: {
     target: "appx",
-    icon: "icon/icon256.png"
+    icon: "dist/.icon-ico/icon.ico"
   },
   appx: {
     identityName: "PrivateGPT",
