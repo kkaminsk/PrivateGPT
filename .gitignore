@@ -5,6 +5,9 @@ package-lock.json
 
 # Build output
 dist/
-build/
+
+# Ignore build except appx assets (needed for MSIX tiles)
+build/*
+!build/appx/
 
 .claude/settings.local.json
