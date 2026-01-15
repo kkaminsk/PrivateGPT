@@ -84,9 +84,10 @@ if (-not (Test-Path $DistDir)) {
     exit 1
 }
 
-$MsixFiles = Get-ChildItem -Path $DistDir -Filter '*.appx' -File
+# Look for .msix first (modern), then .appx (legacy)
+$MsixFiles = Get-ChildItem -Path $DistDir -Filter '*.msix' -File
 if ($MsixFiles.Count -eq 0) {
-    $MsixFiles = Get-ChildItem -Path $DistDir -Filter '*.msix' -File
+    $MsixFiles = Get-ChildItem -Path $DistDir -Filter '*.appx' -File
 }
 
 if ($MsixFiles.Count -eq 0) {

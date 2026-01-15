@@ -167,7 +167,7 @@ npm run build:win:msix:signed
 
 **Verify Signature:**
 ```powershell
-Get-AuthenticodeSignature dist\*.appx
+Get-AuthenticodeSignature dist\*.msix
 ```
 
 ## Testing

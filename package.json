@@ -25,33 +25,6 @@
     "openai": "^4.98.0"
   },
   "build": {
-    "appId": "com.privategpt.app",
-    "productName": "PrivateGPT",
-    "icon": "icon/icon512.png",
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "appx",
-      "icon": "icon/icon256.png"
-    },
-    "appx": {
-      "identityName": "PrivateGPT",
-      "publisher": "CN=Big Hat Group Inc., O=Big Hat Group Inc., L=Calgary, S=Alberta, C=CA",
-      "publisherDisplayName": "PrivateGPT",
-      "applicationId": "PrivateGPT",
-      "displayName": "PrivateGPT",
-      "languages": ["en-US"],
-      "showNameOnTiles": true,
-      "backgroundColor": "#1a1a2e"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": true
-    },
-    "mac": {
-      "target": "dmg"
-    }
+    "extends": "./electron-builder.cjs"
   }
 }
