@@ -1,6 +1,6 @@
 {
   "name": "privategpt",
-  "version": "0.5.0-alpha",
+  "version": "0.8.0",
   "description": "Privacy-focused chat application with ephemeral data storage and local AI models",
   "main": "main.js",
   "type": "module",
