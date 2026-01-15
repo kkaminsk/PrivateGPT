@@ -37,7 +37,7 @@
     },
     "appx": {
       "identityName": "PrivateGPT",
-      "publisher": "CN=PrivateGPT",
+      "publisher": "CN=Big Hat Group Inc., O=Big Hat Group Inc., L=Calgary, S=Alberta, C=CA",
       "publisherDisplayName": "PrivateGPT",
       "applicationId": "PrivateGPT",
       "displayName": "PrivateGPT",
