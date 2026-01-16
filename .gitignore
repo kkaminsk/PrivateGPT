@@ -11,3 +11,5 @@ build/*
 !build/appx/
 
 .claude/settings.local.json
+nul
+.claude/settings.local.json
