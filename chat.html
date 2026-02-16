@@ -1443,7 +1443,7 @@
                     <option value="" disabled selected>Select a local model...</option>
                 </select>
                 <div class="max-tokens-control" title="Maximum tokens for AI response">
-                    <span class="max-tokens-label">Min:</span>
+                    <span class="max-tokens-label">Max:</span>
                     <input type="range" id="max-tokens-slider" class="max-tokens-slider" min="128" max="4096" value="2048" step="128">
                     <span id="max-tokens-value" class="max-tokens-value">2048</span>
                 </div>
@@ -1672,13 +1672,14 @@
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'copy-button';
                     copyBtn.title = 'Copy to clipboard';
-                    copyBtn.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                        <span class="copy-text">Copy</span>
-                    `;
+                    copyBtn.appendChild(createSvgIcon('14', '14', [
+                        { tag: 'rect', attrs: { x: '9', y: '9', width: '13', height: '13', rx: '2', ry: '2' } },
+                        { tag: 'path', attrs: { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' } }
+                    ]));
+                    const copyText = document.createElement('span');
+                    copyText.className = 'copy-text';
+                    copyText.textContent = 'Copy';
+                    copyBtn.appendChild(copyText);
                     copyBtn.addEventListener('click', () => copyMessageToClipboard(copyBtn, content));
                     wrapper.appendChild(copyBtn);
                 }
@@ -1707,14 +1708,17 @@
 
                     // Update icon to checkmark
                     const svg = button.querySelector('svg');
-                    const originalSvg = svg.innerHTML;
-                    svg.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+                    const originalChildren = Array.from(svg.childNodes).map(n => n.cloneNode(true));
+                    svg.replaceChildren();
+                    const checkmark = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    checkmark.setAttribute('points', '20 6 9 17 4 12');
+                    svg.appendChild(checkmark);
 
                     // Reset after 1.5 seconds
                     setTimeout(() => {
                         button.classList.remove('copied');
                         copyText.textContent = originalText;
-                        svg.innerHTML = originalSvg;
+                        svg.replaceChildren(...originalChildren);
                     }, 1500);
                 } catch (err) {
                     console.error('Failed to copy:', err);
@@ -1758,31 +1762,50 @@
             }
 
             // Attachment functions
+            // Helper: create SVG element with given inner markup
+            function createSvgIcon(width, height, paths) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('width', width);
+                svg.setAttribute('height', height);
+                svg.setAttribute('viewBox', '0 0 24 24');
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', 'currentColor');
+                svg.setAttribute('stroke-width', '2');
+                for (const p of paths) {
+                    const el = document.createElementNS('http://www.w3.org/2000/svg', p.tag);
+                    for (const [k, v] of Object.entries(p.attrs)) {
+                        el.setAttribute(k, v);
+                    }
+                    svg.appendChild(el);
+                }
+                return svg;
+            }
+
             function renderAttachments() {
                 attachmentsContainer.innerHTML = '';
                 attachments.forEach(att => {
                     const chip = document.createElement('div');
                     chip.className = `attachment-chip ${att.type}`;
-                    chip.innerHTML = `
-                        <span>${att.name}</span>
-                        <button class="attachment-remove" data-id="${att.id}">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </button>
-                    `;
-                    attachmentsContainer.appendChild(chip);
-                });
 
-                // Add remove handlers
-                document.querySelectorAll('.attachment-remove').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const id = e.currentTarget.dataset.id;
-                        await window.mainAPI.removeAttachment(id);
-                        attachments = attachments.filter(a => a.id !== id);
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = att.name;
+                    chip.appendChild(nameSpan);
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'attachment-remove';
+                    removeBtn.dataset.id = att.id;
+                    removeBtn.appendChild(createSvgIcon('12', '12', [
+                        { tag: 'line', attrs: { x1: '18', y1: '6', x2: '6', y2: '18' } },
+                        { tag: 'line', attrs: { x1: '6', y1: '6', x2: '18', y2: '18' } }
+                    ]));
+                    removeBtn.addEventListener('click', async () => {
+                        await window.mainAPI.removeAttachment(att.id);
+                        attachments = attachments.filter(a => a.id !== att.id);
                         renderAttachments();
                     });
+                    chip.appendChild(removeBtn);
+
+                    attachmentsContainer.appendChild(chip);
                 });
             }
 
@@ -1845,6 +1868,8 @@
                             typingIndicator.remove();
                         }
                         fullResponse += chunk;
+                        // SECURITY: intentionally using textContent (not innerHTML) to prevent
+                        // XSS from model output. Do not change to innerHTML without sanitization.
                         messageContent.textContent = fullResponse;
                         scrollToBottom();
                     });
@@ -1928,13 +1953,25 @@
                         updateContextIndicator();
 
                         if (welcomeScreen) {
-                            const contextInfo = modelContextSize ? `<p style="color: var(--text-secondary);">Context: ${formatNumber(modelContextSize)} tokens</p>` : '';
-                            welcomeScreen.innerHTML = `
-                                <h3>Ready to chat!</h3>
-                                <p>Model loaded: ${result.modelName}</p>
-                                ${hasVisionSupport ? '<p style="color: #60a5fa;">This model supports image analysis.</p>' : ''}
-                                ${contextInfo}
-                            `;
+                            welcomeScreen.replaceChildren();
+                            const h = document.createElement('h3');
+                            h.textContent = 'Ready to chat!';
+                            welcomeScreen.appendChild(h);
+                            const p1 = document.createElement('p');
+                            p1.textContent = 'Model loaded: ' + result.modelName;
+                            welcomeScreen.appendChild(p1);
+                            if (hasVisionSupport) {
+                                const p2 = document.createElement('p');
+                                p2.style.color = '#60a5fa';
+                                p2.textContent = 'This model supports image analysis.';
+                                welcomeScreen.appendChild(p2);
+                            }
+                            if (modelContextSize) {
+                                const p3 = document.createElement('p');
+                                p3.style.color = 'var(--text-secondary)';
+                                p3.textContent = 'Context: ' + formatNumber(modelContextSize) + ' tokens';
+                                welcomeScreen.appendChild(p3);
+                            }
                         }
                     } else {
                         throw new Error(result.error);
@@ -2046,12 +2083,28 @@
                 connector1.classList.remove('complete');
                 connector2.classList.remove('complete');
 
+                function setCheckmark(indicator) {
+                    const circle = indicator.querySelector('.step-circle');
+                    circle.replaceChildren();
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '20');
+                    svg.setAttribute('height', '20');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.setAttribute('fill', 'none');
+                    svg.setAttribute('stroke', 'currentColor');
+                    svg.setAttribute('stroke-width', '3');
+                    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    polyline.setAttribute('points', '20 6 9 17 4 12');
+                    svg.appendChild(polyline);
+                    circle.appendChild(svg);
+                }
+
                 if (step >= 1) {
                     if (step === 1) {
                         step1Indicator.classList.add('active');
                     } else {
                         step1Indicator.classList.add('complete');
-                        step1Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                        setCheckmark(step1Indicator);
                     }
                 }
 
@@ -2061,14 +2114,14 @@
                         step2Indicator.classList.add('active');
                     } else {
                         step2Indicator.classList.add('complete');
-                        step2Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                        setCheckmark(step2Indicator);
                     }
                 }
 
                 if (step >= 3) {
                     connector2.classList.add('complete');
                     step3Indicator.classList.add('active');
-                    step3Indicator.querySelector('.step-circle').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                    setCheckmark(step3Indicator);
                 }
 
                 // Update content visibility
@@ -2084,8 +2137,14 @@
             function showStepStatus(stepNum, type, message) {
                 const statusEl = stepNum === 1 ? step1Status : step2Status;
                 statusEl.className = 'step-status ' + type;
+                statusEl.replaceChildren();
                 if (type === 'checking') {
-                    statusEl.innerHTML = '<div class="mini-spinner"></div><span>' + message + '</span>';
+                    const spinner = document.createElement('div');
+                    spinner.className = 'mini-spinner';
+                    statusEl.appendChild(spinner);
+                    const span = document.createElement('span');
+                    span.textContent = message;
+                    statusEl.appendChild(span);
                 } else {
                     statusEl.textContent = message;
                 }

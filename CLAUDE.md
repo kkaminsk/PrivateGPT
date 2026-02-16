@@ -15,7 +15,7 @@ PrivateGPT enables users to interact with AI models running locally via Foundry 
 
 ## Tech Stack
 
-- **Electron 28.1.0** - Desktop application framework
+- **Electron 28.1.0** - Desktop application framework (sandbox enabled, CSP enforced)
 - **Foundry Local SDK 0.3.0** - Local model management
 - **OpenAI SDK 4.98.0** - LLM API client
 - **Node.js crypto** - AES-256-GCM encryption
@@ -56,6 +56,10 @@ npm run build:mac        # Build macOS DMG
 - **Key isolation** - 32-byte session keys via crypto.randomBytes()
 - **Buffer overwrites** - Explicit fill(0) before deletion
 - **Startup/shutdown purge** - Removes residual data from temp directories
+- **Content Security Policy** - Strict CSP via Electron session headers
+- **Sandbox enabled** - Renderer runs in sandboxed mode
+- **XSS prevention** - No innerHTML for dynamic content; textContent only for model output
+- **Rate limiting** - Concurrent send-message requests rejected
 
 ### IPC Architecture
 - Context isolation enabled, nodeIntegration disabled

@@ -13,7 +13,7 @@
     "build:win:nsis": "electron-builder --win nsis",
     "build:mac": "electron-builder --mac"
   },
-  "author": "",
+  "author": "PrivateGPT Contributors",
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.1.0",

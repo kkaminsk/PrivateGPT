@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, dialog, session } from 'electron'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import OpenAI from 'openai'
@@ -9,6 +9,7 @@ import { startupPurge, registerShutdownHandlers } from './purge.js'
 
 // Global variables
 let mainWindow
+let isProcessing = false
 let aiClient = null
 let modelName = null
 let endpoint = null
@@ -41,8 +42,11 @@ const foundryManager = new FoundryLocalManager()
 
 // IPC Handlers
 
-// Send message to AI model
+// Send message to AI model (with rate limiting)
 ipcMain.handle('send-message', async (_, messages, maxTokens = 2048) => {
+  if (isProcessing) {
+    return { success: false, error: 'A message is already being processed. Please wait.' }
+  }
   return sendMessage(messages, maxTokens)
 })
 
@@ -316,6 +320,7 @@ async function ensureFoundryRunning() {
  * @param {number} maxTokens - Maximum tokens for response
  */
 async function sendMessage(messages, maxTokens = 2048) {
+  isProcessing = true
   try {
     if (!aiClient) {
       throw new Error('No model selected. Please select a local model first.')
@@ -360,9 +365,13 @@ async function sendMessage(messages, maxTokens = 2048) {
     })
 
     for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content
-      if (content) {
-        mainWindow.webContents.send('chat-chunk', content)
+      try {
+        const content = chunk.choices[0]?.delta?.content
+        if (content) {
+          mainWindow.webContents.send('chat-chunk', content)
+        }
+      } catch (chunkError) {
+        console.warn('[PrivateGPT] Error processing stream chunk:', chunkError.message)
       }
     }
 
@@ -372,6 +381,8 @@ async function sendMessage(messages, maxTokens = 2048) {
     // Always send chat-complete on error so frontend can recover
     mainWindow.webContents.send('chat-complete')
     return { success: false, error: error.message }
+  } finally {
+    isProcessing = false
   }
 }
 
@@ -394,8 +405,18 @@ async function createWindow() {
       contextIsolation: true,
       preload: preloadPath,
       enableRemoteModule: false,
-      sandbox: false
+      sandbox: true
     }
+  })
+
+  // Enforce Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; font-src 'self'"]
+      }
+    })
   })
 
   Menu.setApplicationMenu(null)

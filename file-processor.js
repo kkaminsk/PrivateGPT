@@ -1,4 +1,5 @@
 import fs from 'fs'
+import fsp from 'fs/promises'
 import path from 'path'
 
 // File size limits
@@ -68,12 +69,14 @@ export class FileProcessor {
     }
 
     // Check file exists
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fsp.access(filePath)
+    } catch {
       return { success: false, error: `File not found: ${filePath}` }
     }
 
     // Get file stats
-    const stats = fs.statSync(filePath)
+    const stats = await fsp.stat(filePath)
     const fileName = path.basename(filePath)
 
     if (validation.type === 'text') {
@@ -100,12 +103,14 @@ export class FileProcessor {
 
     try {
       // Read file with size limit
-      const fd = fs.openSync(filePath, 'r')
-      const buffer = Buffer.alloc(Math.min(fileSize, TEXT_FILE_LIMIT))
-      fs.readSync(fd, buffer, 0, buffer.length, 0)
-      fs.closeSync(fd)
-
-      const content = buffer.toString('utf8')
+      const fileHandle = await fsp.open(filePath, 'r')
+      try {
+        const buffer = Buffer.alloc(Math.min(fileSize, TEXT_FILE_LIMIT))
+        await fileHandle.read(buffer, 0, buffer.length, 0)
+        var content = buffer.toString('utf8')
+      } finally {
+        await fileHandle.close()
+      }
 
       return {
         success: true,
@@ -140,7 +145,7 @@ export class FileProcessor {
     }
 
     try {
-      const buffer = fs.readFileSync(filePath)
+      const buffer = await fsp.readFile(filePath)
       const base64 = buffer.toString('base64')
       const mimeType = this.getMimeType(filePath)
 
